@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoggingExample.Web", "LoggingExample.Web\LoggingExample.Web.csproj", "{F8ED8494-EA59-4E15-B52C-DFA4D2CC8E4A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{143A4BC7-A402-4D3D-AA1F-2B17B60352F0}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.env = .env
+		.env.example = .env.example
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F8ED8494-EA59-4E15-B52C-DFA4D2CC8E4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8ED8494-EA59-4E15-B52C-DFA4D2CC8E4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8ED8494-EA59-4E15-B52C-DFA4D2CC8E4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8ED8494-EA59-4E15-B52C-DFA4D2CC8E4A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

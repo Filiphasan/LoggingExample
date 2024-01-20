@@ -1,0 +1,46 @@
+version: 3.4;
+
+networks:
+  shared-network:
+    name: my-shared-network
+    driver: bridge
+
+services: 
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+    environment:
+      - "discovery.type=single-node"
+      - "ELASTIC_PASSWORD=${ELASTIC_PASSWORD}"
+      - "xpack.security.enabled=true"
+    ports:
+      - "9200:9200"
+    networks:
+      - shared-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/ || exit 1"]
+      interval: 60s # 60 saniyede 1 tekrarla
+      timeout: 5s # İstek sonucunu max 5 saniye bekle 
+      retries: 3 # Hata durumunda 3 defa dene
+      start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.16.1
+    environment:
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+      - "ELASTICSEARCH_USERNAME=elastic"
+      - "ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}"
+    ports:
+      - "5601:5601" #Localhost üzerinden 5601 portu ile ulaşmayı açtık
+    networks: #En üstte oluşturduğumuz ortak network'e bağladık
+      - shared-network
+    depends_on: #elasticsearch servisine bağılılık ayarlar ve elasticsearch servisinin healty olması beklenir
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:5601/ || exit 1" ]
+      interval: 60s # 60 saniyede 1 tekrarla
+      timeout: 5s # İstek sonucunu max 5 saniye bekle
+      retries: 3 # Hata durumunda 3 defa dene
+      start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla

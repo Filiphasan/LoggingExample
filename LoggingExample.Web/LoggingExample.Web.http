@@ -1,0 +1,6 @@
+@LoggingExample.Web_HostAddress = http://localhost:5124
+
+GET {{LoggingExample.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
