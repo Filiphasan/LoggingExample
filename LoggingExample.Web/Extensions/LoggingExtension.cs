@@ -14,7 +14,9 @@ public static class LoggingExtension
 
         SelfLog.Enable(Console.Error); // Serilog'un kendi hatalarını loglamayı açmak için bunu kullanıyoruz
 
-        Log.Logger = new LoggerConfiguration().PrepareLoggerConfig(model);
+        Log.Logger = new LoggerConfiguration()
+            .PrepareLoggerConfig(model)
+            .CreateLogger();
     }
 
     public static void RegisterSerilog(this WebApplicationBuilder builder)
@@ -30,7 +32,7 @@ public static class LoggingExtension
         });
     }
 
-    private static Serilog.Core.Logger PrepareLoggerConfig(this LoggerConfiguration loggerConfiguration, SeriLogConfigModel model)
+    private static LoggerConfiguration PrepareLoggerConfig(this LoggerConfiguration loggerConfiguration, SeriLogConfigModel model)
     {
         return loggerConfiguration.MinimumLevel.Information() // Tüm loglamalar için Information ve üstü loglansın (Information, Warning, Error, Fatal)
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning) // Microsoft uygulamaları için Warning, Error, Fatal loglansın
@@ -50,7 +52,6 @@ public static class LoggingExtension
             })
             .Enrich.FromLogContext() // Tüm loglarda ek field olarak logun kaynak bilgisini ekle (SourceContext)
             .Enrich.WithMachineName() // Tüm loglarda ek field olarak bilgisayarin ismi ekle (MachineName)
-            .Enrich.WithProperty("Environment", model.Environment) // Tüm loglarda ek field olarak ortam bilgisini ekle (Environment)
-            .CreateLogger();
+            .Enrich.WithProperty("Environment", model.Environment);
     }
 }

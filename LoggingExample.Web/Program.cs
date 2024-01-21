@@ -9,10 +9,10 @@ builder.Configuration.RegisterLogger();
 builder.Host.UseSerilog();
 
 // Second way of register serilog
-//builder.RegisterSerilog();
+// builder.RegisterSerilog();
 
 // Third way of register serilog
-//builder.Host.UseSerilog((_, loggerConfig) => loggerConfig.ReadFrom.Configuration(builder.Configuration));
+// builder.Host.UseSerilog((_, loggerConfig) => loggerConfig.ReadFrom.Configuration(builder.Configuration));
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
