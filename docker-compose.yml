@@ -5,7 +5,7 @@ networks:
     name: my-shared-network
     driver: bridge
 
-services: 
+services:
   elasticsearch:
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
@@ -17,8 +17,8 @@ services:
       - "9200:9200"
     networks:
       - shared-network
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/ || exit 1"]
+    healthcheck: #Servis sağlık kontrolü
+      test: [ "CMD-SHELL", "curl -f -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/ || exit 1" ]
       interval: 60s # 60 saniyede 1 tekrarla
       timeout: 5s # İstek sonucunu max 5 saniye bekle 
       retries: 3 # Hata durumunda 3 defa dene
@@ -35,12 +35,39 @@ services:
       - "5601:5601" #Localhost üzerinden 5601 portu ile ulaşmayı açtık
     networks: #En üstte oluşturduğumuz ortak network'e bağladık
       - shared-network
-    depends_on: #elasticsearch servisine bağılılık ayarlar ve elasticsearch servisinin healty olması beklenir
+    depends_on: #elasticsearch servisine bağımlı olduğunu belirtiyoruz ve elasticsearch servisinin healty olması beklenir
       elasticsearch:
         condition: service_healthy
-    healthcheck:
+    healthcheck: #Servis sağlık kontrolü
       test: [ "CMD-SHELL", "curl -f http://localhost:5601/ || exit 1" ]
       interval: 60s # 60 saniyede 1 tekrarla
       timeout: 5s # İstek sonucunu max 5 saniye bekle
       retries: 3 # Hata durumunda 3 defa dene
       start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla
+
+  logging-example:
+    container_name: logging-example-api
+    image: ${DOCKER_REGISTRY-}logging-example-api
+    build:
+      context: .
+      dockerfile: LoggingExample.Web/Dockerfile
+    ports:
+      - "5001:8080"
+    networks:
+      - shared-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    healthcheck: #Servis sağlık kontrolü
+      test: [ "CMD-SHELL", "curl -f http://localhost:5001/api/health-check || exit 1" ]
+      interval: 60s #60 saniyede 1 tekrarla
+      timeout: 5s #İstek sonucunu max 5 saniye bekle
+      retries: 3 #Hata durumunda 3 defa dene
+      start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla
+    environment: #appsettings.json dosyasında olan ortam değişkenlerini ezmek için ayarlamalar
+      - "Serilog:WriteTo:1:Args:nodeUris=http://elastic:${ELASTIC_PASSWORD}@elasticsearch:9200"
+      - "SeriLogConfig:ElasticUri=http://elasticsearch:9200"
+      - "SeriLogConfig:ElasticUser=elastic"
+      - "SeriLogConfig:ElasticPassword=${ELASTIC_PASSWORD}"
