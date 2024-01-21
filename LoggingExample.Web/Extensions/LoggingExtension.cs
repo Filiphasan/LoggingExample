@@ -10,15 +10,33 @@ public static class LoggingExtension
     public static void RegisterLogger(this IConfiguration configuration)
     {
         var model = configuration.GetSection("SeriLogConfig").Get<SeriLogConfigModel>();
+        ArgumentNullException.ThrowIfNull(model);
 
         SelfLog.Enable(Console.Error); // Serilog'un kendi hatalarını loglamayı açmak için bunu kullanıyoruz
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information() // Tüm loglamalar için Information ve üstü loglansın (Information, Warning, Error, Fatal)
+        Log.Logger = new LoggerConfiguration().PrepareLoggerConfig(model);
+    }
+
+    public static void RegisterSerilog(this WebApplicationBuilder builder)
+    {
+        var model = builder.Configuration.GetSection("SeriLogConfig").Get<SeriLogConfigModel>();
+        ArgumentNullException.ThrowIfNull(model);
+
+        SelfLog.Enable(Console.Error); // Serilog'un kendi hatalarını loglamayı açmak için bunu kullanıyoruz
+
+        builder.Host.UseSerilog((_, loggerConfig) =>
+        {
+            loggerConfig.PrepareLoggerConfig(model);
+        });
+    }
+
+    private static Serilog.Core.Logger PrepareLoggerConfig(this LoggerConfiguration loggerConfiguration, SeriLogConfigModel model)
+    {
+        return loggerConfiguration.MinimumLevel.Information() // Tüm loglamalar için Information ve üstü loglansın (Information, Warning, Error, Fatal)
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning) // Microsoft uygulamaları için Warning, Error, Fatal loglansın
             .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning) // System uygulamaları için Warning, Error, Fatal loglansın
             .WriteTo.Console() // Console uzerinden loglansın
-            .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(model!.ElasticUri)) // Elasticsearch uzerinden loglansın
+            .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(model.ElasticUri)) // Elasticsearch uzerinden loglansın
             {
                 AutoRegisterTemplate = true,
                 OverwriteTemplate = true,
