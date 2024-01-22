@@ -37,6 +37,7 @@ public static class LoggingExtension
         return loggerConfiguration.MinimumLevel.Information() // Tüm loglamalar için Information ve üstü loglansın (Information, Warning, Error, Fatal)
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning) // Microsoft uygulamaları için Warning, Error, Fatal loglansın
             .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning) // System uygulamaları için Warning, Error, Fatal loglansın
+            .MinimumLevel.Override("Elastic.Apm", Serilog.Events.LogEventLevel.Warning) // Elastic.Apm uygulamaları için Warning, Error, Fatal loglansın
             .WriteTo.Console() // Console uzerinden loglansın
             .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(model.ElasticUri)) // Elasticsearch uzerinden loglansın
             {

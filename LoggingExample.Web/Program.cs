@@ -1,3 +1,4 @@
+using Elastic.Apm.NetCoreAll;
 using LoggingExample.Web;
 using LoggingExample.Web.Extensions;
 using Serilog;
@@ -21,6 +22,7 @@ builder.Services.RegisterWeb();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+app.UseAllElasticApm(builder.Configuration);
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
