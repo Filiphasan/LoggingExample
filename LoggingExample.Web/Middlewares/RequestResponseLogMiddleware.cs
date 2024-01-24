@@ -6,7 +6,7 @@ public class RequestResponseLogMiddleware(ILoggerFactory loggerFactory) : IMiddl
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        _logger.LogInformation("Test Log");
+        _logger.LogInformation("Test Log {RequestPath}", context.Request.Path);
         await next(context);
     }
 }

@@ -1,22 +1,25 @@
-version: '3.7'
+version: '3.7' # Alttaki kullandığım özellikleri karşılaması için minimum 3.7 versiyonunu kullandım.
+#${ELASTIC_PASSWORD} bu ifade dotenv dosyasından değerin alınacağını belirtir, aslında environment üzerindeki ELASTIC_PASSWORD değişkenini oku demek
+#${APM_SECRET_TOKEN} bu ifade dotenv dosyasından değerin alınacağını belirtir, aslında environment içindeki APM_SECRET_TOKEN değişkenini oku demek
 
 networks:
-  shared-network:
-    name: my-shared-network
-    driver: bridge
+  shared-network: # Tüm konteynarlarımın ortak kullanacağı bir network oluşturuyorum.
+    name: my-shared-network # Networkin adı
+    driver: bridge # Networkin driverı, bridge olacak, varsayılandır. Containerlar dışa ve içeriye açık olmasını sağlar
 
+# Projem ve bağımlılıklarını birer servis olarak ayarlıyoruz
 services:
-  elasticsearch:
-    container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+  elasticsearch: # Elasticsearch
+    container_name: elasticsearch # Containerin adı
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1 # Imagein adresi, özellikle bu sürümü kibana arayüzüne alışık olduğumdan tercih ediyorum
     environment:
       - "discovery.type=single-node"
-      - "ELASTIC_PASSWORD=${ELASTIC_PASSWORD}"
-      - "xpack.security.enabled=true"
+      - "ELASTIC_PASSWORD=${ELASTIC_PASSWORD}" # Elastic Şifresi, varsayılan username olarak "elastic" kullanıyoruz
+      - "xpack.security.enabled=true" # Kibana için güvenlik ayarını açıyoruz, şifre vs için gerekli
     ports:
-      - "9200:9200"
+      - "9200:9200" # Sağ taraf içerideki portu belirtiyor, sol taraf ise tarayıcıdan erişebileceğimiz dışa açılan port
     networks:
-      - shared-network
+      - shared-network # Ortak networke bağladık
     healthcheck: #Servis sağlık kontrolü
       test: [ "CMD-SHELL", "curl -f -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/ || exit 1" ]
       interval: 60s # 60 saniyede 1 tekrarla
@@ -24,13 +27,13 @@ services:
       retries: 3 # Hata durumunda 3 defa dene
       start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla
 
-  kibana:
-    container_name: kibana
-    image: docker.elastic.co/kibana/kibana:7.16.1
+  kibana: # Kibana
+    container_name: kibana # Containerin adı
+    image: docker.elastic.co/kibana/kibana:7.16.1 # Imagein adresi, özellikle bu sürümü kibana arayüzüne alışık olduğum için tercih ediyorum
     environment:
-      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
-      - "ELASTICSEARCH_USERNAME=elastic"
-      - "ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}"
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200" # Kibana için elasticsearchin adresini belirtiyoruz
+      - "ELASTICSEARCH_USERNAME=elastic" # Kibana için kullanıcı adını belirtiyoruz
+      - "ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}" # Kibana için kullanıcı sifresini belirtiyoruz
     ports:
       - "5601:5601" #Localhost üzerinden 5601 portu ile ulaşmayı açtık
     networks: #En üstte oluşturduğumuz ortak network'e bağladık
@@ -45,21 +48,28 @@ services:
       retries: 3 # Hata durumunda 3 defa dene
       start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla
 
-  apm-server:
-    container_name: elastic-apm
-    image: docker.elastic.co/apm/apm-server:7.16.0
-    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+  apm-server: # APM
+    container_name: elastic-apm # Containerin adı
+    image: docker.elastic.co/apm/apm-server:7.16.0 # Elastic stackde kullanılan paketlerin sürümleri birbiri ile uyumlu olması lazım
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"] 
     cap_drop: ["ALL"]
     ports:
-      - "8200:8200"
+      - "8200:8200" 
     networks:
       - shared-network
     depends_on:
-      elasticsearch:
+      elasticsearch: # APM servisine elasticsearch servisine bağımlığını belirtiyoruz, elasticsearch servisinin healty olması beklenir
         condition: service_healthy
-    command: >
+    # APM servisininin environment değişkenlerini ayarlıyoruz
+    # elastic.apm.secret.token bilgisi projemizden APM servislerini kullanmak için gerekiyor
+    # output.elasticsearch.hosts, elasticsearchin adresini belirtiyoruz
+    # output.elasticsearch.protocol, SSL kurulumu yapmadık bu nedenle http olacak
+    # output.elasticsearch.username, elasticsearchin kullanıcı adını belirtiyoruz
+    # output.elasticsearch.password, elasticsearchin kullanıcı sifresini belirtiyoruz
+    # output.elasticsearch.ssl.enabled, SSL kurulumu yapmadık bu nedenle false olacak
+    command: > 
       apm-server -e
-         -E elastic.apm.secret.token=${APM_SECRET_TOKEN}
+         -E elastic.apm.secret.token=${APM_SECRET_TOKEN} 
          -E output.elasticsearch.enabled=true
          -E output.elasticsearch.hosts=["elasticsearch:9200"]
          -E output.elasticsearch.protocol=http
@@ -73,17 +83,17 @@ services:
       retries: 3 # Hata durumunda 3 defa dene
       start_period: 30s #Servis çalıştıktan 30 saniye sonra işleme başla
 
-  logging-example:
-    container_name: logging-example-api
-    image: ${DOCKER_REGISTRY-}logging-example-api
-    build:
-      context: .
-      dockerfile: LoggingExample.Web/Dockerfile
+  logging-example: # Logging Example Projemizi servis olarak ekliyoruz
+    container_name: logging-example-api # Containerin adı
+    image: ${DOCKER_REGISTRY-}logging-example-api # Imagein adresi
+    build: # Imageyi oluşturmak için build adımı
+      context: . # Imagein bulundugu klasör
+      dockerfile: LoggingExample.Web/Dockerfile # Imagein oluşturulacagı Dockerfile dosya yolu
     ports:
-      - "5001:8080"
+      - "5001:8080" #Localhost içinden 5001 portu ile ulaşmayı açtık, 8080 Dockerfile içinde ayarladığımız port
     networks:
       - shared-network
-    depends_on:
+    depends_on: #elasticsearch, kibana ve apm-server servislerine bağımlı olduğunu belirtiyoruz ve servisler healthy olmalı
       elasticsearch:
         condition: service_healthy
       kibana:
